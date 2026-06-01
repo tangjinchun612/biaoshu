@@ -47,4 +47,6 @@ ENV STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
 
 EXPOSE 8501
 
+
+
 CMD ["sh", "-c", "python indexer.py && streamlit run app.py"]
