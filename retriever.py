@@ -92,8 +92,8 @@ class LawRetriever:
         )
         return len(result[0]) > 0
 
-    def index_doc(self, chunks: List[Dict[str, Any]]):
-        """将标书分块写入 DOC_COLLECTION（chunks 来自 pdf_processor.process_pdf）"""
+    def index_doc(self, chunks: List[Dict[str, Any]], doc_type: str = "bid"):
+        """将文档分块写入 DOC_COLLECTION"""
         if not chunks:
             return
         texts   = [c["text"] for c in chunks]
@@ -111,6 +111,7 @@ class LawRetriever:
                     "page":      chunk["page"],
                     "chunk_idx": chunk["chunk_idx"],
                     "text":      chunk["text"],
+                    "doc_type":  doc_type,
                 },
             )
             for i, (chunk, vec) in enumerate(zip(chunks, vectors))
@@ -222,5 +223,22 @@ class LawRetriever:
 
     # ── 兼容旧接口 ────────────────────────────────────────────────────────────
 
-    def retrieve(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
+    def retrieve(self, query: str, top_k: int = 5, doc_type: Optional[str] = None) -> List[Dict[str, Any]]:
+        if doc_type:
+            vec = self.embed(query)
+            filter_ = Filter(must=[
+                FieldCondition(key="doc_type", match=MatchValue(value=doc_type))
+            ])
+            points = self._query(DOC_COLLECTION, vec, top_k, filter_)
+            return [
+                {
+                    "source":   "doc",
+                    "filename": p.payload.get("filename", ""),
+                    "page":     p.payload.get("page", 0),
+                    "text":     p.payload.get("text", ""),
+                    "score":    round(p.score, 4),
+                    "doc_type": p.payload.get("doc_type", "bid"),
+                }
+                for p in points
+            ]
         return self.retrieve_all(query, law_k=top_k, doc_k=3)

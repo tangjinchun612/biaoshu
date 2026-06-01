@@ -17,6 +17,8 @@ RUN pip install --no-cache-dir \
     && pip install --no-cache-dir -r requirements.txt
 
 # 预下载 embedding 模型（baked into image，避免运行时下载）
+ARG HF_ENDPOINT=https://hf-mirror.com
+ENV HF_ENDPOINT=${HF_ENDPOINT}
 RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('BAAI/bge-small-zh-v1.5')"
 
 # 复制应用代码和数据
