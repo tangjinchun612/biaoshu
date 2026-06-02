@@ -36,8 +36,12 @@ ENV HF_ENDPOINT=${HF_ENDPOINT}
 RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('BAAI/bge-small-zh-v1.5')"
 
 # ========== 7. 复制应用代码和数据 ==========
-COPY data.py indexer.py retriever.py app.py doc_processor.py ./
+COPY data.py indexer.py retriever.py app.py doc_processor.py config.yaml ./
 COPY data/ ./data/
+COPY api/ ./api/
+COPY core/ ./core/
+COPY start.sh ./
+RUN chmod +x start.sh
 
 # ========== 8. Streamlit 配置 ==========
 ENV STREAMLIT_SERVER_PORT=8501
@@ -46,7 +50,8 @@ ENV STREAMLIT_SERVER_HEADLESS=true
 ENV STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
 
 EXPOSE 8501
+EXPOSE 8000
 
 
 
-CMD ["sh", "-c", "python indexer.py && streamlit run app.py"]
+CMD ["sh", "-c", "python indexer.py && bash start.sh"]

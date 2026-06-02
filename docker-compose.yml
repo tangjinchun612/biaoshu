@@ -12,6 +12,7 @@ services:
     container_name: zhaobiao_app
     ports:
       - "8501:8501"
+      - "8000:8000"
     environment:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - ANTHROPIC_BASE_URL=${ANTHROPIC_BASE_URL:-}
