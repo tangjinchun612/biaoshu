@@ -64,6 +64,17 @@ def create_file(filename: str, file_type: str, file_path: str, file_hash: str) -
     return file_id
 
 
+def update_file_path(file_id: str, file_path: str):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE files SET file_path = ? WHERE file_id = ?",
+        (file_path, file_id)
+    )
+    conn.commit()
+    conn.close()
+
+
 def get_file(file_id: str) -> Optional[Dict[str, Any]]:
     conn = get_connection()
     cursor = conn.cursor()
@@ -132,6 +143,7 @@ def list_tasks(status: Optional[str] = None, page: int = 1, page_size: int = 10)
             "SELECT * FROM tasks WHERE status = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
             (status, page_size, offset)
         )
+        tasks = [dict(row) for row in cursor.fetchall()]
         cursor.execute("SELECT COUNT(*) FROM tasks WHERE status = ?", (status,))
         total = cursor.fetchone()[0]
     else:
@@ -139,10 +151,9 @@ def list_tasks(status: Optional[str] = None, page: int = 1, page_size: int = 10)
             "SELECT * FROM tasks ORDER BY created_at DESC LIMIT ? OFFSET ?",
             (page_size, offset)
         )
+        tasks = [dict(row) for row in cursor.fetchall()]
         cursor.execute("SELECT COUNT(*) FROM tasks")
         total = cursor.fetchone()[0]
-    
-    tasks = [dict(row) for row in cursor.fetchall()]
     conn.close()
     
     return {

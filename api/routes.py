@@ -35,24 +35,29 @@ async def upload_file(
     file: UploadFile = File(...),
     file_type: FileType = Form(...)
 ):
-    file_id = str(uuid.uuid4())
-    ext = Path(file.filename).suffix
-    filename = f"{file_id}{ext}"
-    filepath = Path(UPLOAD_DIR) / filename
-    
     content = await file.read()
-    with open(filepath, 'wb') as f:
-        f.write(content)
     
     from doc_processor import file_hash
     fhash = file_hash(content)
     
-    create_file(
+    # 先存入数据库获取 file_id，再用它命名文件
+    file_id = create_file(
         filename=file.filename,
         file_type=file_type.value,
-        file_path=str(filepath),
+        file_path="",  # 占位，下面更新
         file_hash=fhash
     )
+    
+    ext = Path(file.filename).suffix
+    stored_filename = f"{file_id}{ext}"
+    filepath = Path(UPLOAD_DIR) / stored_filename
+    
+    with open(filepath, 'wb') as f:
+        f.write(content)
+    
+    # 更新文件路径
+    from api.database import update_file_path
+    update_file_path(file_id, str(filepath))
     
     return FileUploadResponse(
         file_id=file_id,
