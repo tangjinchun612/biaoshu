@@ -85,7 +85,7 @@ class Analyzer:
         tender_content = "\n\n".join([chunk["text"] for chunk in tender_chunks])
         prompt = get_extraction_prompt(self.config, tender_content)
         messages = [{"role": "user", "content": prompt}]
-        return self.llm.call_json(messages)
+        return self.llm.call_json(messages, max_tokens=16384)
     
     def _compare_requirement(self, requirement: Dict[str, Any], bid_response: str) -> Dict[str, Any]:
         prompt = get_comparison_prompt(self.config, requirement["requirement"], bid_response)

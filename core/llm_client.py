@@ -68,17 +68,48 @@ class LLMClient:
         )
         return response.choices[0].message.content
     
-    def call_json(self, messages: List[Dict[str, str]], max_tokens: int = 2048) -> Dict[str, Any]:
+    def call_json(self, messages: List[Dict[str, str]], max_tokens: int = 8192) -> Any:
         response_text = self.call(messages, max_tokens)
+        json_str = self._extract_json_str(response_text)
         
         try:
-            if "```json" in response_text:
-                json_str = response_text.split("```json")[1].split("```")[0].strip()
-            elif "```" in response_text:
-                json_str = response_text.split("```")[1].split("```")[0].strip()
-            else:
-                json_str = response_text
-            
             return json.loads(json_str)
-        except json.JSONDecodeError as e:
-            raise ValueError(f"LLM返回的JSON格式无效: {e}\n原始响应: {response_text}")
+        except json.JSONDecodeError:
+            # 尝试修复截断的 JSON（补全缺失的括号和引号）
+            fixed = self._try_fix_truncated_json(json_str)
+            if fixed is not None:
+                return fixed
+            raise ValueError(f"LLM返回的JSON格式无效\n原始响应: {response_text[:2000]}")
+    
+    @staticmethod
+    def _extract_json_str(text: str) -> str:
+        if "```json" in text:
+            return text.split("```json")[1].split("```")[0].strip()
+        elif "```" in text:
+            return text.split("```")[1].split("```")[0].strip()
+        return text.strip()
+    
+    @staticmethod
+    def _try_fix_truncated_json(json_str: str):
+        """尝试修复被截断的 JSON 数组/对象"""
+        import re
+        # 去掉末尾不完整的字符串（未闭合的引号）
+        # 找最后一个完整的 JSON 对象结束位置
+        last_brace = json_str.rfind("}")
+        if last_brace == -1:
+            return None
+        truncated = json_str[:last_brace + 1]
+        
+        # 计算未闭合的括号
+        open_brackets = truncated.count("[") - truncated.count("]")
+        open_braces = truncated.count("{") - truncated.count("}")
+        
+        # 补全闭合
+        fixed = truncated
+        fixed += "}" * open_braces
+        fixed += "]" * open_brackets
+        
+        try:
+            return json.loads(fixed)
+        except json.JSONDecodeError:
+            return None
