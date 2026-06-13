@@ -43,35 +43,34 @@ class TaskStatusResponse(BaseModel):
     updated_at: datetime
 
 
-class RequirementItem(BaseModel):
+class CriteriaItem(BaseModel):
     category: str
     requirement: str
     location: str
     is_mandatory: bool
 
 
-class AnalysisResult(BaseModel):
+class BidContentItem(BaseModel):
+    criteria_index: int
+    matched_text: str
+
+
+class ComparisonItem(BaseModel):
+    criteria_index: int
     status: str
     severity: str
     issues: List[str]
     suggestions: List[str]
 
 
-class RequirementAnalysis(BaseModel):
-    requirement: RequirementItem
-    analysis: AnalysisResult
-    bid_response_text: str
-
-
 class TaskResult(BaseModel):
     task_id: str
-    status: TaskStatus
     requirements_count: int
     issues_count: int
     score: float
-    analyses: List[RequirementAnalysis]
-    created_at: datetime
-    completed_at: datetime
+    criteria: List[CriteriaItem]
+    bid_contents: List[BidContentItem]
+    comparisons: List[ComparisonItem]
 
 
 class TaskListItem(BaseModel):

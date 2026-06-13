@@ -28,97 +28,113 @@ class ReportGenerator:
         lines.append("# 标书对比分析报告\n")
         lines.append(f"**生成时间:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
         lines.append(f"**任务ID:** {result['task_id']}\n")
-        
+
         lines.append("## 分析概览\n")
-        lines.append(f"- **需求数量:** {result['requirements_count']}")
+        lines.append(f"- **评审标准数量:** {result['requirements_count']}")
         lines.append(f"- **问题数量:** {result['issues_count']}")
         lines.append(f"- **综合得分:** {result['score']}分\n")
-        
-        lines.append("## 详细分析\n")
-        
-        for idx, analysis in enumerate(result['analyses'], 1):
-            req = analysis['requirement']
-            result_item = analysis['analysis']
-            
-            lines.append(f"### {idx}. {req['category']} - {req['requirement'][:50]}...\n")
-            lines.append(f"**位置:** {req['location']}")
-            lines.append(f"**是否强制:** {'是' if req['is_mandatory'] else '否'}\n")
-            
-            status = result_item.get('status', '未知')
-            severity = result_item.get('severity', '未知')
-            
+
+        # 第一块：评审标准
+        lines.append("## 一、评审标准\n")
+        for idx, c in enumerate(result['criteria'], 1):
+            lines.append(f"### {idx}. {c['category']}\n")
+            lines.append(f"**要求:** {c['requirement']}")
+            lines.append(f"**位置:** {c['location']}")
+            lines.append(f"**是否强制:** {'是' if c['is_mandatory'] else '否'}\n")
+            lines.append("---\n")
+
+        # 第二块：标书相关内容
+        lines.append("## 二、标书相关内容\n")
+        for idx, b in enumerate(result['bid_contents'], 1):
+            lines.append(f"### 对应评审标准 {idx}\n")
+            lines.append(f"**标书匹配内容:**\n")
+            lines.append(f"> {b['matched_text']}\n")
+            lines.append("---\n")
+
+        # 第三块：对比结果
+        lines.append("## 三、对比结果与建议\n")
+        for idx, c in enumerate(result['comparisons'], 1):
+            status = c.get('status', '未知')
+            severity = c.get('severity', '未知')
+
             if status == '符合':
-                lines.append(f"✅ **状态:** {status}")
+                icon = '✅'
             elif status == '部分符合':
-                lines.append(f"⚠️ **状态:** {status}")
+                icon = '⚠️'
             else:
-                lines.append(f"❌ **状态:** {status}")
-            
+                icon = '❌'
+
+            lines.append(f"### {icon} 评审标准 {idx} - {status}\n")
             lines.append(f"**严重程度:** {severity}\n")
-            
-            issues = result_item.get('issues', [])
+
+            issues = c.get('issues', [])
             if issues:
                 lines.append("**问题:**")
                 for issue in issues:
                     lines.append(f"- {issue}")
                 lines.append("")
-            
-            suggestions = result_item.get('suggestions', [])
+
+            suggestions = c.get('suggestions', [])
             if suggestions:
                 lines.append("**修改建议:**")
                 for suggestion in suggestions:
                     lines.append(f"- {suggestion}")
                 lines.append("")
-            
+
             lines.append("---\n")
-        
+
         return "\n".join(lines)
     
     def generate_word(self, result: Dict[str, Any]) -> bytes:
         doc = Document()
-        
+
         title = doc.add_heading('标书对比分析报告', 0)
         title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        
+
         doc.add_paragraph(f"生成时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         doc.add_paragraph(f"任务ID: {result['task_id']}")
-        
+
         doc.add_heading('分析概览', level=1)
-        doc.add_paragraph(f"需求数量: {result['requirements_count']}")
+        doc.add_paragraph(f"评审标准数量: {result['requirements_count']}")
         doc.add_paragraph(f"问题数量: {result['issues_count']}")
         doc.add_paragraph(f"综合得分: {result['score']}分")
-        
-        doc.add_heading('详细分析', level=1)
-        
-        for idx, analysis in enumerate(result['analyses'], 1):
-            req = analysis['requirement']
-            result_item = analysis['analysis']
-            
-            doc.add_heading(f"{idx}. {req['category']}", level=2)
-            doc.add_paragraph(f"要求: {req['requirement']}")
-            doc.add_paragraph(f"位置: {req['location']}")
-            doc.add_paragraph(f"是否强制: {'是' if req['is_mandatory'] else '否'}")
-            
-            status = result_item.get('status', '未知')
-            severity = result_item.get('severity', '未知')
-            
-            doc.add_paragraph(f"状态: {status}")
+
+        # 第一块：评审标准
+        doc.add_heading('一、评审标准', level=1)
+        for idx, c in enumerate(result['criteria'], 1):
+            doc.add_heading(f"{idx}. {c['category']}", level=2)
+            doc.add_paragraph(f"要求: {c['requirement']}")
+            doc.add_paragraph(f"位置: {c['location']}")
+            doc.add_paragraph(f"是否强制: {'是' if c['is_mandatory'] else '否'}")
+
+        # 第二块：标书相关内容
+        doc.add_heading('二、标书相关内容', level=1)
+        for idx, b in enumerate(result['bid_contents'], 1):
+            doc.add_heading(f"对应评审标准 {idx}", level=2)
+            doc.add_paragraph(b['matched_text'])
+
+        # 第三块：对比结果
+        doc.add_heading('三、对比结果与建议', level=1)
+        for idx, c in enumerate(result['comparisons'], 1):
+            status = c.get('status', '未知')
+            severity = c.get('severity', '未知')
+            doc.add_heading(f"评审标准 {idx} - {status}", level=2)
             doc.add_paragraph(f"严重程度: {severity}")
-            
-            issues = result_item.get('issues', [])
+
+            issues = c.get('issues', [])
             if issues:
                 doc.add_paragraph("问题:", style='List Bullet')
                 for issue in issues:
                     doc.add_paragraph(issue, style='List Bullet 2')
-            
-            suggestions = result_item.get('suggestions', [])
+
+            suggestions = c.get('suggestions', [])
             if suggestions:
                 doc.add_paragraph("修改建议:", style='List Bullet')
                 for suggestion in suggestions:
                     doc.add_paragraph(suggestion, style='List Bullet 2')
-            
+
             doc.add_paragraph()
-        
+
         buffer = BytesIO()
         doc.save(buffer)
         buffer.seek(0)

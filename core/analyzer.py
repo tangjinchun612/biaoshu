@@ -93,15 +93,32 @@ class Analyzer:
         return self.llm.call_json(messages)
     
     def _generate_result(self, task_id: str, analyses: List[Dict[str, Any]]) -> Dict[str, Any]:
-        issues_count = sum(len(a["analysis"].get("issues", [])) for a in analyses)
+        criteria = []
+        bid_contents = []
+        comparisons = []
+
+        for idx, a in enumerate(analyses):
+            criteria.append(a["requirement"])
+            bid_contents.append({
+                "criteria_index": idx,
+                "matched_text": a["bid_response_text"]
+            })
+            comparisons.append({
+                "criteria_index": idx,
+                **a["analysis"]
+            })
+
+        issues_count = sum(len(c.get("issues", [])) for c in comparisons)
         score = self._calculate_score(analyses)
-        
+
         return {
             "task_id": task_id,
-            "requirements_count": len(analyses),
+            "requirements_count": len(criteria),
             "issues_count": issues_count,
             "score": score,
-            "analyses": analyses
+            "criteria": criteria,
+            "bid_contents": bid_contents,
+            "comparisons": comparisons
         }
     
     def _calculate_score(self, analyses: List[Dict[str, Any]]) -> float:
