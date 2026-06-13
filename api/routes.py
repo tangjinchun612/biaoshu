@@ -110,7 +110,7 @@ async def create_analysis_task(
     )
 
 
-async def run_analysis_task(task_id: str, tender_file_path: str, bid_file_path: str):
+def run_analysis_task(task_id: str, tender_file_path: str, bid_file_path: str):
     try:
         update_task_status(task_id, "processing", progress=0)
         
@@ -151,6 +151,7 @@ async def get_task_status(task_id: str):
         task_id=task['task_id'],
         status=TaskStatus(task['status']),
         progress=task['progress'],
+        error_message=task.get('error_message'),
         created_at=task['created_at'],
         updated_at=task['updated_at']
     )

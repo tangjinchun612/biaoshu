@@ -46,6 +46,9 @@ MODELS = {
     "Qwen-Max":          "qwen-max",
     "Qwen-Plus":         "qwen-plus",
     "Qwen-Turbo":        "qwen-turbo",
+    "DeepSeek-V3":       "deepseek-chat",
+    "DeepSeek-R1":       "deepseek-reasoner",
+    "GLM-4.7 (火山方舟)": "ep-20260525134343-gks56",
 }
 
 DASHSCOPE_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"

@@ -39,6 +39,7 @@ class TaskStatusResponse(BaseModel):
     task_id: str
     status: TaskStatus
     progress: int
+    error_message: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 

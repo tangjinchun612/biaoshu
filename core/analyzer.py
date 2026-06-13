@@ -9,7 +9,7 @@ from doc_processor import process_document
 
 
 class Analyzer:
-    def __init__(self, config: Optional[AppConfig] = None, model_key: str = "qwen-plus"):
+    def __init__(self, config: Optional[AppConfig] = None, model_key: str = "ep-20260525134343-gks56"):
         self.config = config or load_config()
         self.llm = LLMClient(model_key)
         self.retriever = LawRetriever()
@@ -81,11 +81,41 @@ class Analyzer:
         filename = Path(file_path).name
         return process_document(file_bytes, filename)
     
+    def _split_chunks(self, chunks: List[Dict[str, Any]], max_chars: int = 120000) -> List[List[Dict[str, Any]]]:
+        """按字符数将 chunks 分组，每组不超过 max_chars"""
+        groups, current, current_size = [], [], 0
+        for chunk in chunks:
+            text_len = len(chunk["text"])
+            if current and current_size + text_len > max_chars:
+                groups.append(current)
+                current, current_size = [], 0
+            current.append(chunk)
+            current_size += text_len
+        if current:
+            groups.append(current)
+        return groups
+
     def _extract_requirements(self, tender_chunks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        tender_content = "\n\n".join([chunk["text"] for chunk in tender_chunks])
-        prompt = get_extraction_prompt(self.config, tender_content)
-        messages = [{"role": "user", "content": prompt}]
-        return self.llm.call_json(messages, max_tokens=16384)
+        groups = self._split_chunks(tender_chunks)
+        all_requirements = []
+
+        for i, group in enumerate(groups):
+            tender_content = "\n\n".join([chunk["text"] for chunk in group])
+            prompt = get_extraction_prompt(self.config, tender_content)
+            messages = [{"role": "user", "content": prompt}]
+            batch = self.llm.call_json(messages, max_tokens=16384)
+            if isinstance(batch, list):
+                all_requirements.extend(batch)
+
+        # 按 requirement 内容去重
+        seen = set()
+        unique = []
+        for req in all_requirements:
+            key = req.get("requirement", "")[:80]
+            if key not in seen:
+                seen.add(key)
+                unique.append(req)
+        return unique
     
     def _compare_requirement(self, requirement: Dict[str, Any], bid_response: str) -> Dict[str, Any]:
         prompt = get_comparison_prompt(self.config, requirement["requirement"], bid_response)

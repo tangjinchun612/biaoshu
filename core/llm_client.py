@@ -17,9 +17,14 @@ MODELS = {
     "qwen-max": "qwen-max",
     "qwen-plus": "qwen-plus",
     "qwen-turbo": "qwen-turbo",
+    "deepseek-chat": "deepseek-chat",
+    "deepseek-reasoner": "deepseek-reasoner",
+    "GLM-4.7": "ep-20260525134343-gks56",
 }
 
 DASHSCOPE_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+DEEPSEEK_BASE_URL = "https://api.deepseek.com"
+VOLCENGINE_BASE_URL = "https://ark.cn-beijing.volces.com/api/v3"
 
 
 class LLMClient:
@@ -27,6 +32,8 @@ class LLMClient:
         self.model_key = model_key
         self._anthropic_client = None
         self._qwen_client = None
+        self._deepseek_client = None
+        self._volcengine_client = None
     
     @property
     def anthropic_client(self) -> anthropic.Anthropic:
@@ -46,9 +53,27 @@ class LLMClient:
             self._qwen_client = OpenAI(api_key=api_key, base_url=DASHSCOPE_BASE_URL)
         return self._qwen_client
     
+    @property
+    def deepseek_client(self) -> OpenAI:
+        if self._deepseek_client is None:
+            api_key = os.getenv("DEEPSEEK_API_KEY", "")
+            self._deepseek_client = OpenAI(api_key=api_key, base_url=DEEPSEEK_BASE_URL)
+        return self._deepseek_client
+    
+    @property
+    def volcengine_client(self) -> OpenAI:
+        if self._volcengine_client is None:
+            api_key = os.getenv("VOLCENGINE_API_KEY", "")
+            self._volcengine_client = OpenAI(api_key=api_key, base_url=VOLCENGINE_BASE_URL)
+        return self._volcengine_client
+    
     def call(self, messages: List[Dict[str, str]], max_tokens: int = 2048) -> str:
         if self.model_key == "claude":
             return self._call_claude(messages, max_tokens)
+        elif self.model_key.startswith("deepseek"):
+            return self._call_deepseek(messages, max_tokens)
+        elif self.model_key.startswith("doubao") or self.model_key.startswith("ep-"):
+            return self._call_volcengine(messages, max_tokens)
         else:
             return self._call_qwen(messages, max_tokens)
     
@@ -62,6 +87,22 @@ class LLMClient:
     
     def _call_qwen(self, messages: List[Dict[str, str]], max_tokens: int) -> str:
         response = self.qwen_client.chat.completions.create(
+            model=self.model_key,
+            messages=messages,
+            max_tokens=max_tokens
+        )
+        return response.choices[0].message.content
+    
+    def _call_deepseek(self, messages: List[Dict[str, str]], max_tokens: int) -> str:
+        response = self.deepseek_client.chat.completions.create(
+            model=self.model_key,
+            messages=messages,
+            max_tokens=max_tokens
+        )
+        return response.choices[0].message.content
+    
+    def _call_volcengine(self, messages: List[Dict[str, str]], max_tokens: int) -> str:
+        response = self.volcengine_client.chat.completions.create(
             model=self.model_key,
             messages=messages,
             max_tokens=max_tokens
