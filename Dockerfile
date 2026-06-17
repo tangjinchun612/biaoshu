@@ -11,6 +11,7 @@ RUN sed -i 's|deb.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list.d/debia
 # ========== 2. 系统依赖 ==========
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
 # ========== 3. 先复制依赖文件（利用 Docker 层缓存） ==========

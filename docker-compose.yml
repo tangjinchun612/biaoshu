@@ -1,4 +1,24 @@
 services:
+  mysql:
+    image: mysql:8.0
+    container_name: zhaobiao_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: zhaobiao_root_2024
+      MYSQL_DATABASE: zhaobiao
+      MYSQL_USER: zhaobiao
+      MYSQL_PASSWORD: zhaobiao123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
   qdrant:
     image: qdrant/qdrant:v1.13.2
     container_name: zhaobiao_qdrant
@@ -22,10 +42,18 @@ services:
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6333
       - HF_ENDPOINT=https://hf-mirror.com
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - MYSQL_USER=zhaobiao
+      - MYSQL_PASSWORD=zhaobiao123
+      - MYSQL_DATABASE=zhaobiao
     depends_on:
+      mysql:
+        condition: service_healthy
       qdrant:
         condition: service_started
     restart: unless-stopped
 
 volumes:
+  mysql_data:
   qdrant_data:

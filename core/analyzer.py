@@ -154,19 +154,11 @@ class Analyzer:
     def _calculate_score(self, analyses: List[Dict[str, Any]]) -> float:
         if not analyses:
             return 100.0
-        
-        total_deduction = 0
-        severity_weights = self.config.scoring.severity_weights
-        
+
+        status_scores = self.config.scoring.status_scores
+        total = 0
         for a in analyses:
-            severity = a["analysis"].get("severity", "轻微")
-            weight = severity_weights.get(severity, 2)
             status = a["analysis"].get("status", "符合")
-            
-            if status == "不符合":
-                total_deduction += weight
-            elif status == "部分符合":
-                total_deduction += weight * 0.5
-        
-        score = max(0, 100 - total_deduction)
-        return round(score, 2)
+            total += status_scores.get(status, 60)
+
+        return round(total / len(analyses), 2)

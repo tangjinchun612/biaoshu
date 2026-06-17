@@ -16,7 +16,7 @@ class Prompts(BaseModel):
 
 
 class Scoring(BaseModel):
-    severity_weights: Dict[str, int]
+    status_scores: Dict[str, int]
     pass_threshold: int
 
 
