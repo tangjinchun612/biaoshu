@@ -9,7 +9,7 @@ from doc_processor import process_document
 
 
 class Analyzer:
-    def __init__(self, config: Optional[AppConfig] = None, model_key: str = "ep-20260525134343-gks56"):
+    def __init__(self, config: Optional[AppConfig] = None, model_key: str = "ep-20260617103431-kmx9q"):
         self.config = config or load_config()
         self.llm = LLMClient(model_key)
         self.retriever = LawRetriever()

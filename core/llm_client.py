@@ -20,6 +20,7 @@ MODELS = {
     "deepseek-chat": "deepseek-chat",
     "deepseek-reasoner": "deepseek-reasoner",
     "GLM-4.7": "ep-20260525134343-gks56",
+    "Doubao-Smart-Router": "ep-20260617103431-kmx9q",
 }
 
 DASHSCOPE_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"

@@ -49,6 +49,7 @@ MODELS = {
     "DeepSeek-V3":       "deepseek-chat",
     "DeepSeek-R1":       "deepseek-reasoner",
     "GLM-4.7 (火山方舟)": "ep-20260525134343-gks56",
+    "豆包智能路由 (成本优先)": "ep-20260617103431-kmx9q",
 }
 
 DASHSCOPE_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
